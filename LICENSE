@@ -1,5 +1,3 @@
-
-
 MIT License
   
 Copyright (c) 2025 elin_lyze
@@ -26,4 +24,5 @@ SOFTWARE.
 
 Credits:
 This project uses Marked (https://marked.js.org/ or https://github.com/markedjs/marked) — an MIT-licensed Markdown parser by Christopher Jeffrey and contributors.  
-© 2018+ MarkedJS (https://github.com/markedjs/), © 2011-2018 Christopher Jeffrey (https://github.com/chjj/)
+© 2011-2018 Christopher Jeffrey (https://github.com/chjj/)
+© 2018+ MarkedJS (https://github.com/markedjs/)
