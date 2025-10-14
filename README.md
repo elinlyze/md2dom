@@ -39,4 +39,6 @@ Every suggestion helps make this a better little open-source utility.
   
 ## License  
 Released under the [MIT License](./LICENSE).  
-Includes [Marked](https://marked.js.org/), © 2018+ [MarkedJS](https://github.com/markedjs/), © 2011-2018 [Christopher Jeffrey](https://github.com/chjj/)
+Includes [Marked](https://marked.js.org/), also released under MIT.  
+© 2011–2018 [Christopher Jeffrey](https://github.com/chjj/), © 2018–present [MarkedJS](https://github.com/markedjs/).
+
