@@ -36,3 +36,7 @@ I’m not an HTML, JS or frontend expert. **md2dom** is the result of learning b
   
 If you spot issues, have ideas for improvements or just want to help make it cleaner, I’d love your feedback and contributions.  
 Every suggestion helps make this a better little open-source utility.  
+  
+## License  
+Released under the [MIT License](./LICENSE).  
+Includes [Marked](https://marked.js.org/), © 2018+ [MarkedJS](https://github.com/markedjs/), © 2011-2018 [Christopher Jeffrey](https://github.com/chjj/)
