@@ -26,4 +26,4 @@ Static site generators, CI pipelines, and templating systems can be overkill whe
 You’re invited to fork it, modify it, or integrate its logic into your own tools.  
 Contributions, issues, and discussion are always welcome — improvements grow best in the open.
 
-[Source Code] (https://github.com/elinlyze/md2dom)
+[Source Code](https://github.com/elinlyze/md2dom)
