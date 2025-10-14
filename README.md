@@ -1,7 +1,7 @@
 # md2dom — From Markdown to Clean, Shareable HTML
 
 ## Disclaimer
-This project makes use of [marked.js](https://marked.js.org/) loaded via CDN and some browser-native JavaScript tools.  
+This project makes use of [marked.js](https://marked.js.org/) (included in ./lib/) and some browser-native JavaScript tools.  
   
 ## Overview
 **md2dom** is a lightweight, browser-based tool that converts Markdown into clean, self-contained HTML.  
