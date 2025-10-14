@@ -1,5 +1,8 @@
 # md2dom — From Markdown to Clean, Shareable HTML
 
+## Disclaimer
+This project makes use of [marked.js](https://marked.js.org/) loaded via CDN and some browser-native JavaScript tools.  
+  
 ## Overview
 **md2dom** is a lightweight, browser-based tool that converts Markdown into clean, self-contained HTML.  
 It’s designed for developers, writers, and open-source maintainers who want an easy way to turn documentation or notes into web pages — without build steps, dependencies, or command-line tooling.
@@ -29,7 +32,7 @@ Contributions, issues, and discussion are always welcome — improvements grow b
   
 ## A Note on Development
 This project was created with a lot of curiosity, patience, and even some help from AI tools along the way for code clarity (sorry).  
-I’m not an HTML or frontend expert. **md2dom** is the result of learning by doing, experimenting and the help of people much smarter than me.  
+I’m not an HTML, JS or frontend expert. **md2dom** is the result of learning by doing, experimenting and the help of people much smarter than me.  
   
 If you spot issues, have ideas for improvements or just want to help make it cleaner, I’d love your feedback and contributions.  
 Every suggestion helps make this a better little open-source utility.  
