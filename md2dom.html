@@ -81,6 +81,7 @@ small{font-weight:400;color:#aaa}
 <label class=inline><input type=checkbox id=external checked>External links open in new tab</label>
 <label class=inline><input type=checkbox id=tableGrid checked>Minimal table grid</label>
 <label class=inline><input type=checkbox id=boxCode checked>Box code blocks</label>
+<label id=boxCodeColorWrap class=disabled><span>Code box colour</span><input type=color id=boxCodeColor value=#111111 disabled></label>
 <details class=advanced>
 <summary>Advanced</summary>
 <div class=advancedBody>
@@ -132,6 +133,16 @@ const preview=$("preview");
 const previewInner=$("previewInner");
 const leftOffsetWrap=$("leftOffsetWrap");
 const leftOffsetInput=$("leftOffset");
+const boxCodeColorWrap=$("boxCodeColorWrap");
+const boxCodeColorInput=$("boxCodeColor");
+const updateBoxCodeColorState=()=>{
+  if(!boxCodeColorInput)return;
+  const enable=$("theme").value==="custom"&&$("boxCode").checked;
+  boxCodeColorInput.disabled=!enable;
+  if(boxCodeColorWrap){
+    boxCodeColorWrap.classList.toggle("disabled",!enable);
+  }
+};
 const syncTitleFromSource=text=>{
   const raw=text??readSource();
   const match=raw.match(/^#\s+(.+)/m);
@@ -159,10 +170,19 @@ const applyThemeControls=()=>{
   if(mode==="dark"){
     bg.value="#050505";
     fg.value="#f2f2f2";
+    if(boxCodeColorInput){
+      boxCodeColorInput.value="#111111";
+    }
   }else if(mode==="light"){
     bg.value="#ffffff";
     fg.value="#111111";
+    if(boxCodeColorInput){
+      boxCodeColorInput.value="#f4f4f4";
+    }
+  }else if(custom&&boxCodeColorInput&&!boxCodeColorInput.value){
+    boxCodeColorInput.value="#111111";
   }
+  updateBoxCodeColorState();
 };
 $("theme").addEventListener("change",()=>{applyThemeControls();render();});
 applyThemeControls();
@@ -220,7 +240,7 @@ const cssFor=opts=>{
   let css=`:root{color-scheme:${scheme}}body{margin:0;background:${bodyBg};color:${bodyFg};${fontDecl}${lineHeight}}main{max-width:${width};${marginDecl}padding:clamp(1rem,4vw,2.5rem)}main>*+*{margin-top:1.5rem}h1,h2,h3,h4,h5,h6{line-height:1.2}`;
   if(opts.tableGrid){css+=`table{border-collapse:collapse;width:100%}td,th{border:1px solid currentColor;padding:.35rem .5rem;text-align:left}`;}
   if(opts.boxCode){
-    const codeBg=opts.mode==="dark"?"#111":"#f4f4f4";
+    const codeBg=opts.mode==="custom"&&opts.boxCodeColor?opts.boxCodeColor:(opts.mode==="dark"?"#111":"#f4f4f4");
     css+=`pre{padding:1rem;border-radius:.5rem;overflow:auto;background:${codeBg}}code{font-family:ui-monospace,monospace}`;
   }
   return css;
@@ -236,6 +256,7 @@ const gatherOptions=()=>({
   lineHeight:$("lineHeight").value.trim(),
   tableGrid:$("tableGrid").checked,
   boxCode:$("boxCode").checked,
+  boxCodeColor:$("boxCodeColor").value,
   stripEmoji:$("stripEmoji").checked,
   stripWhitespace:$("stripWhitespace").checked
 });
@@ -277,7 +298,7 @@ const buildHtml=(content,withCss,opts)=>{
     const inlineCss=[];
     if(opts.tableGrid){inlineCss.push("table{border-collapse:collapse;width:100%}td,th{border:1px solid currentColor;padding:.35rem .5rem;text-align:left}");}
     if(opts.boxCode){
-      const codeBg=opts.mode==="dark"?"#111":"#f4f4f4";
+      const codeBg=opts.mode==="custom"&&opts.boxCodeColor?opts.boxCodeColor:(opts.mode==="dark"?"#111":"#f4f4f4");
       inlineCss.push(`pre{padding:1rem;border-radius:.5rem;overflow:auto;background:${codeBg}}code{font-family:ui-monospace,monospace}`);
     }
     if(inlineCss.length)head+=`<style>${inlineCss.join("")}</style>`;
@@ -305,7 +326,7 @@ const applyPreviewStyles=opts=>{
     const css=[];
     if(opts.tableGrid){css.push("#preview table{border-collapse:collapse;width:100%}#preview td,#preview th{border:1px solid currentColor;padding:.35rem .5rem;text-align:left}");}
     if(opts.boxCode){
-      const codeBg=opts.mode==="dark"?"#111":"#f4f4f4";
+      const codeBg=opts.mode==="custom"&&opts.boxCodeColor?opts.boxCodeColor:(opts.mode==="dark"?"#111":"#f4f4f4");
       css.push(`#preview pre{padding:1rem;border-radius:.5rem;overflow:auto;background:${codeBg}}#preview code{font-family:ui-monospace,monospace}`);
     }
     previewTheme.textContent=css.join("");
@@ -325,7 +346,12 @@ const render=()=>{
     $("styled").value="";
     return;
   }
-  let html=marked.parse(raw,{mangle:false,headerIds:false});
+  let html;
+  if(window.marked&&typeof marked.parse==="function"){
+    html=marked.parse(raw,{mangle:false,headerIds:false});
+  }else{
+    html=raw;
+  }
   html=sanitizeHtml(html);
   html=processLinks(html);
   if(opts.stripEmoji){
@@ -356,11 +382,12 @@ const updateLeftOffsetState=()=>{
 $("align").addEventListener("change",()=>{updateLeftOffsetState();render();});
 updateLeftOffsetState();
 $("tableGrid").addEventListener("change",render);
-$("boxCode").addEventListener("change",render);
+$("boxCode").addEventListener("change",()=>{updateBoxCodeColorState();render();});
 $("font").addEventListener("change",render);
 $("external").addEventListener("change",render);
 $("bg").addEventListener("change",()=>{if($("theme").value==="custom")render();});
 $("fg").addEventListener("change",()=>{if($("theme").value==="custom")render();});
+$("boxCodeColor").addEventListener("change",()=>{if($("theme").value==="custom")render();});
 $("file").addEventListener("change",e=>{
   const f=e.target.files[0];
   if(!f){
