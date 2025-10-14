@@ -22,13 +22,6 @@ SOFTWARE.
 
 ---
 
-Credits:
-This project uses Marked (https://marked.js.org/ or https://github.com/markedjs/marked) — an MIT-licensed Markdown parser by Christopher Jeffrey and contributors.  
-© 2011-2018 Christopher Jeffrey (https://github.com/chjj/)
-© 2018+ MarkedJS (https://github.com/markedjs/)
-
----
-
 Third-Party Software
 
 This project bundles the [Marked.js](https://github.com/markedjs/marked) library
