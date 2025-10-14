@@ -10,7 +10,7 @@ It’s designed for developers, writers, and open-source maintainers who want an
 ## Why It Exists
 Markdown is beautiful in its simplicity, but getting it onto the web often involves too much ceremony.  
 Static site generators, CI pipelines, and templating systems can be overkill when you just need a readable page.  
-**md2dom** was built to bridge that gap — to take your Markdown and generate a standards-compliant, portable HTML document in seconds.
+**md2dom** was built to bridge that gap, to take your Markdown and generate a standards-compliant, portable HTML document in seconds.
 
 ## Key Principles
 - **Open and transparent:** Everything runs in your browser. No servers, no tracking, no uploads.  
