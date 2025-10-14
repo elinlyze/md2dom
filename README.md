@@ -24,6 +24,12 @@ Static site generators, CI pipelines, and templating systems can be overkill whe
 ## Community and Collaboration
 **md2dom** is open source because the web should stay open.  
 You’re invited to fork it, modify it, or integrate its logic into your own tools.  
-Contributions, issues, and discussion are always welcome — improvements grow best in the open.
-
+Contributions, issues, and discussion are always welcome — improvements grow best in the open.  
 [Source Code](https://github.com/elinlyze/md2dom)
+  
+## A Note on Development
+This project was created with a lot of curiosity, patience, and even some help from AI tools along the way for code clarity (sorry).  
+I’m not an HTML or frontend expert. **md2dom** is the result of learning by doing, experimenting and the help of people much smarter than me.  
+  
+If you spot issues, have ideas for improvements or just want to help make it cleaner, I’d love your feedback and contributions.  
+Every suggestion helps make this a better little open-source utility.  
