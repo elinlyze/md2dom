@@ -49,8 +49,8 @@ small{font-weight:400;color:#aaa}
 <option value=custom>Custom</option>
 </select></label>
 <div class="cols two">
-<label>Background colour<input type=color id=bg value=#050505></label>
-<label>Text colour<input type=color id=fg value=#f2f2f2></label>
+<label id=bgWrap class=disabled><span>Background colour</span><input type=color id=bg value=#050505 disabled></label>
+<label id=fgWrap class=disabled><span>Text colour</span><input type=color id=fg value=#f2f2f2 disabled></label>
 </div>
 </fieldset>
 <fieldset>
@@ -104,7 +104,6 @@ small{font-weight:400;color:#aaa}
 <div id=preview class=previewWrap><div id=previewInner class=previewInner></div></div>
 </section>
 </main>
-<!-- Marked.js (MIT License) | https://github.com/markedjs/marked -->
 <script src="./lib/marked.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -167,6 +166,9 @@ const applyThemeControls=()=>{
   const custom=mode==="custom";
   const bg=$("bg"),fg=$("fg");
   bg.disabled=fg.disabled=!custom;
+  const bgWrap=$("bgWrap"),fgWrap=$("fgWrap");
+  if(bgWrap){bgWrap.classList.toggle("disabled",!custom);}
+  if(fgWrap){fgWrap.classList.toggle("disabled",!custom);}
   if(mode==="dark"){
     bg.value="#050505";
     fg.value="#f2f2f2";
