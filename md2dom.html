@@ -1,0 +1,399 @@
+<!doctype html>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>md2dom</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 system-ui,sans-serif;background:#111;color:#f2f2f2}
+main{margin:auto;max-width:min(1600px,100%);padding:1.5rem;display:grid;gap:1.5rem;grid-template-columns:minmax(18rem,1fr) minmax(0,1.4fr);align-items:start}
+h1{margin:0 0 .5rem;font-size:1.75rem}
+label{display:flex;flex-direction:column;gap:.25rem;font-weight:600}
+label.inline{flex-direction:row;align-items:center;gap:.5rem;font-weight:500}
+input,textarea,select,button{font:inherit;padding:.35rem .5rem;background:#1b1b1b;color:inherit;border:1px solid #333;border-radius:.25rem}
+button{cursor:pointer;background:#222;border-color:#555}
+button:disabled{opacity:.5;cursor:not-allowed}
+textarea{min-height:18rem;resize:vertical}
+textarea.meta{min-height:2rem;resize:none;overflow:hidden}
+fieldset{border:1px solid #333;padding:.75rem;display:grid;gap:.75rem}
+legend{padding:0 .5rem}
+small{font-weight:400;color:#aaa}
+.controls{display:grid;gap:.75rem}
+.cols{display:grid;gap:.5rem}
+.cols.two{grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));align-items:end}
+.buttons{display:flex;flex-wrap:wrap;gap:.5rem}
+.previewWrap{border:1px solid #333;background:#050505;color:#f2f2f2;padding:0;min-height:20rem;height:auto;overflow:auto;resize:vertical;width:100%}
+.previewInner{margin:0 auto}
+.disabled>span{opacity:.6}
+.advanced summary{cursor:pointer;font-weight:600}
+.advancedBody{display:grid;gap:.75rem;margin-top:.5rem}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+</style>
+<main>
+<section class=controls>
+<h1>md2dom</h1>
+<label>Title
+<input id=title placeholder="Optional title" disabled></label>
+<label class=inline><input type=checkbox id=useH1 checked>Use first H1 as title</label>
+<label>Meta description
+<textarea id=desc class=meta placeholder="Optional meta description"></textarea></label>
+<label>Markdown or plaintext source
+<textarea id=source></textarea>
+<input type=file id=file accept=".md,.markdown,.txt,.html,text/plain">
+</label>
+<fieldset>
+<legend>Theme</legend>
+<label><select id=theme>
+<option value=dark selected>Dark</option>
+<option value=light>Light</option>
+<option value=auto>Browser default</option>
+<option value=custom>Custom</option>
+</select></label>
+<div class="cols two">
+<label>Background colour<input type=color id=bg value=#050505></label>
+<label>Text colour<input type=color id=fg value=#f2f2f2></label>
+</div>
+</fieldset>
+<fieldset>
+<legend>Layout</legend>
+<div class="cols two">
+<label>Width<select id=width>
+<option value="60ch">60ch</option>
+<option value="72ch" selected>72ch</option>
+<option value="88ch">88ch</option>
+<option value=custom>Custom</option>
+</select></label>
+<label>Custom width<input id=widthCustom placeholder="e.g. 80" disabled></label>
+<label>Alignment<select id=align>
+<option value=center selected>Centered</option>
+<option value=auto>Browser default</option>
+<option value=left>Align left</option>
+</select></label>
+<label>Font<select id=font>
+<option value="">Browser default</option>
+<option value="system-ui,sans-serif">System UI</option>
+<option value="serif">Serif</option>
+<option value="'Courier New',monospace">Monospace</option>
+<option value="'Fira Code',monospace">Fira Code</option>
+</select></label>
+</div>
+<label id=leftOffsetWrap class=disabled><span>Left offset</span><input id=leftOffset placeholder="e.g. 2rem" disabled></label>
+<label>Line spacing<input id=lineHeight placeholder="e.g. 1.6" value=1.6></label>
+<label class=inline><input type=checkbox id=external checked>External links open in new tab</label>
+<label class=inline><input type=checkbox id=tableGrid checked>Minimal table grid</label>
+<label class=inline><input type=checkbox id=boxCode checked>Box code blocks</label>
+<details class=advanced>
+<summary>Advanced</summary>
+<div class=advancedBody>
+<label>Language<input id=lang placeholder=en></label>
+<label class=inline><input type=checkbox id=disableViewport>Disable mobile viewport</label>
+<label class=inline><input type=checkbox id=stripEmoji>Automatically remove emojis</label>
+<label class=inline><input type=checkbox id=stripWhitespace>Automatically remove whitespace</label>
+</div>
+</details>
+</fieldset>
+<div class=buttons>
+<button type=button id=downloadHtml disabled>Download HTML</button>
+<button type=button id=downloadStyled disabled>Download HTML + CSS</button>
+</div>
+<textarea id=pure hidden></textarea>
+<textarea id=styled hidden></textarea>
+</section>
+<section>
+<h1>Preview</h1>
+<div id=preview class=previewWrap><div id=previewInner class=previewInner></div></div>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const titleInput=$("title");
+const useH1=$("useH1");
+const escAttr=v=>v.replace(/&/g,"&amp;").replace(/"/g,"&quot;");
+const escHtml=v=>v.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const readSource=()=>$("source").value;
+const normalizeCustomWidth=val=>{
+  const trimmed=val.trim();
+  if(!trimmed)return "72ch";
+  return /^[0-9]+(?:\.[0-9]+)?$/.test(trimmed)?`${trimmed}ch`:trimmed;
+};
+const widthValue=()=>{
+  const val=$("width").value;
+  if(val==="custom"){return normalizeCustomWidth($("widthCustom").value);}
+  return val;
+};
+const fontValue=()=>{
+  const val=$("font").value.trim();
+  return val.length?val:null;
+};
+const downloadHtmlBtn=$("downloadHtml");
+const downloadStyledBtn=$("downloadStyled");
+const preview=$("preview");
+const previewInner=$("previewInner");
+const leftOffsetWrap=$("leftOffsetWrap");
+const leftOffsetInput=$("leftOffset");
+const syncTitleFromSource=text=>{
+  const raw=text??readSource();
+  const match=raw.match(/^#\s+(.+)/m);
+  titleInput.value=match?match[1].trim():"";
+};
+const updateConvertState=()=>{
+  const hasContent=readSource().trim().length>0;
+  if(!hasContent){
+    downloadHtmlBtn.disabled=downloadStyledBtn.disabled=true;
+    previewInner.innerHTML="";
+  }
+};
+$("source").addEventListener("input",updateConvertState);
+$("width").addEventListener("change",()=>{
+  const isCustom=$("width").value==="custom";
+  $("widthCustom").disabled=!isCustom;
+  render();
+});
+$("widthCustom").disabled=true;
+const applyThemeControls=()=>{
+  const mode=$("theme").value;
+  const custom=mode==="custom";
+  const bg=$("bg"),fg=$("fg");
+  bg.disabled=fg.disabled=!custom;
+  if(mode==="dark"){
+    bg.value="#050505";
+    fg.value="#f2f2f2";
+  }else if(mode==="light"){
+    bg.value="#ffffff";
+    fg.value="#111111";
+  }
+};
+$("theme").addEventListener("change",()=>{applyThemeControls();render();});
+applyThemeControls();
+updateConvertState();
+titleInput.disabled=useH1.checked;
+useH1.addEventListener("change",()=>{
+  const enabled=useH1.checked;
+  titleInput.disabled=enabled;
+  if(enabled){
+    syncTitleFromSource();
+  }else{
+    titleInput.value="";
+  }
+  render();
+});
+const sanitizeHtml=html=>{
+  const div=document.createElement("div");
+  div.innerHTML=html;
+  div.querySelectorAll("script").forEach(node=>node.remove());
+  div.querySelectorAll("*").forEach(node=>{
+    Array.from(node.attributes).forEach(attr=>{
+      if(/^on/i.test(attr.name)||/^javascript:/i.test(attr.value||"")){
+        node.removeAttribute(attr.name);
+      }
+    });
+  });
+  return div.innerHTML;
+};
+const processLinks=html=>{
+  if(!$("external").checked)return html;
+  const div=document.createElement("div");
+  div.innerHTML=html;
+  div.querySelectorAll("a[href]").forEach(a=>{
+    const href=a.getAttribute("href");
+    if(/^https?:/i.test(href)||href.startsWith("//")){
+      a.target="_blank";
+      a.rel="noopener";
+    }
+  });
+  return div.innerHTML;
+};
+const stripEmojis=text=>text.replace(/\p{Extended_Pictographic}/gu,"").replace(/[\uFE0E\uFE0F]/g,"");
+const minifyHtml=html=>html.replace(/>\s+</g,"><").trim();
+const cssFor=opts=>{
+  const align=opts.align;
+  const width=opts.width;
+  const font=opts.font||"";
+  let bodyBg="#fff",bodyFg="#111";
+  if(opts.mode==="dark"){bodyBg="#050505";bodyFg="#f2f2f2";}
+  if(opts.mode==="custom"){bodyBg=opts.bg;bodyFg=opts.fg;}
+  const marginDecl=align==="center"?"margin:0 auto;":align==="left"?(opts.leftOffset?`margin:0 0 0 ${opts.leftOffset};`:"margin:0;"):"";
+  const fontDecl=font?`font-family:${font};`:"";
+  const lineHeight=opts.lineHeight?`line-height:${opts.lineHeight};`:"";
+  const scheme=opts.mode==="dark"?"dark":opts.mode==="light"?"light":"light dark";
+  let css=`:root{color-scheme:${scheme}}body{margin:0;background:${bodyBg};color:${bodyFg};${fontDecl}${lineHeight}}main{max-width:${width};${marginDecl}padding:clamp(1rem,4vw,2.5rem)}main>*+*{margin-top:1.5rem}h1,h2,h3,h4,h5,h6{line-height:1.2}`;
+  if(opts.tableGrid){css+=`table{border-collapse:collapse;width:100%}td,th{border:1px solid currentColor;padding:.35rem .5rem;text-align:left}`;}
+  if(opts.boxCode){
+    const codeBg=opts.mode==="dark"?"#111":"#f4f4f4";
+    css+=`pre{padding:1rem;border-radius:.5rem;overflow:auto;background:${codeBg}}code{font-family:ui-monospace,monospace}`;
+  }
+  return css;
+};
+const gatherOptions=()=>({
+  mode:$("theme").value,
+  width:widthValue(),
+  align:$("align").value,
+  font:fontValue(),
+  bg:$("bg").value,
+  fg:$("fg").value,
+  leftOffset:$("leftOffset").value.trim(),
+  lineHeight:$("lineHeight").value.trim(),
+  tableGrid:$("tableGrid").checked,
+  boxCode:$("boxCode").checked,
+  stripEmoji:$("stripEmoji").checked,
+  stripWhitespace:$("stripWhitespace").checked
+});
+const buildHtml=(content,withCss,opts)=>{
+  let title=$("title").value.trim();
+  let desc=$("desc").value.trim();
+  if(opts.stripEmoji){
+    title=stripEmojis(title);
+    desc=stripEmojis(desc);
+  }
+  const lang=($("lang").value.trim()||"en").replace(/["<>]/g,"");
+  const viewportDisabled=$("disableViewport").checked;
+  let head="<meta charset=utf-8>";
+  if(!viewportDisabled){
+    head+=`<meta name=viewport content="width=device-width,initial-scale=1">`;
+  }
+  if(title)head+=`<title>${escHtml(title)}</title>`;
+  if(desc)head+=`<meta name=description content="${escAttr(desc)}">`;
+  if(withCss)head+=`<style>${cssFor(opts)}</style>`;
+  let bodyAttr="";
+  let mainAttr="";
+  if(!withCss){
+    const bodyParts=["margin:0"];
+    if(opts.mode==="dark")bodyParts.push("background:#050505","color:#f2f2f2");
+    else if(opts.mode==="light")bodyParts.push("background:#fff","color:#111");
+    else if(opts.mode==="custom")bodyParts.push(`background:${opts.bg}`,`color:${opts.fg}`);
+    if(opts.lineHeight)bodyParts.push(`line-height:${opts.lineHeight}`);
+    if(opts.font)bodyParts.push(`font-family:${opts.font}`);
+    const width=opts.width;
+    const mainParts=[`max-width:${width}`,"padding:clamp(1rem,4vw,2.5rem)"];
+    if(opts.align==="center")mainParts.push("margin:0 auto");
+    else if(opts.align==="left"){
+      mainParts.push(opts.leftOffset?`margin:0 0 0 ${opts.leftOffset}`:"margin:0");
+    }
+    bodyAttr=` style="${bodyParts.join(';')}"`;
+    mainAttr=` style="${mainParts.join(';')}"`;
+  }
+  if(!withCss){
+    const inlineCss=[];
+    if(opts.tableGrid){inlineCss.push("table{border-collapse:collapse;width:100%}td,th{border:1px solid currentColor;padding:.35rem .5rem;text-align:left}");}
+    if(opts.boxCode){
+      const codeBg=opts.mode==="dark"?"#111":"#f4f4f4";
+      inlineCss.push(`pre{padding:1rem;border-radius:.5rem;overflow:auto;background:${codeBg}}code{font-family:ui-monospace,monospace}`);
+    }
+    if(inlineCss.length)head+=`<style>${inlineCss.join("")}</style>`;
+  }
+  return `<!doctype html><html lang=${lang}><head>${head}</head><body${bodyAttr}><main${mainAttr}>${content}</main></body></html>`;
+};
+const previewTheme=document.createElement("style");
+previewTheme.id="previewTheme";
+document.head.appendChild(previewTheme);
+const applyPreviewStyles=opts=>{
+  let bodyBg="#fff",bodyFg="#111";
+  if(opts.mode==="dark"){bodyBg="#050505";bodyFg="#f2f2f2";}
+  if(opts.mode==="custom"){bodyBg=opts.bg;bodyFg=opts.fg;}
+  preview.style.background=bodyBg;
+  preview.style.color=bodyFg;
+  const width=opts.width||"72ch";
+  previewInner.style.maxWidth=width;
+  previewInner.style.width="100%";
+  previewInner.style.padding="clamp(1rem,4vw,2.5rem)";
+  previewInner.style.margin=opts.align==="center"?"0 auto":opts.align==="left"?(opts.leftOffset?`0 0 0 ${opts.leftOffset}`:"0"):"";
+  previewInner.style.fontFamily=opts.font||"";
+  previewInner.style.lineHeight=opts.lineHeight||"";
+  previewTheme.textContent="";
+  if(opts.tableGrid||opts.boxCode){
+    const css=[];
+    if(opts.tableGrid){css.push("#preview table{border-collapse:collapse;width:100%}#preview td,#preview th{border:1px solid currentColor;padding:.35rem .5rem;text-align:left}");}
+    if(opts.boxCode){
+      const codeBg=opts.mode==="dark"?"#111":"#f4f4f4";
+      css.push(`#preview pre{padding:1rem;border-radius:.5rem;overflow:auto;background:${codeBg}}#preview code{font-family:ui-monospace,monospace}`);
+    }
+    previewTheme.textContent=css.join("");
+  }
+};
+const render=()=>{
+  const raw=readSource();
+  if(useH1.checked){
+    syncTitleFromSource(raw);
+  }
+  const opts=gatherOptions();
+  applyPreviewStyles(opts);
+  if(!raw.trim()){
+    previewInner.innerHTML="";
+    downloadHtmlBtn.disabled=downloadStyledBtn.disabled=true;
+    $("pure").value="";
+    $("styled").value="";
+    return;
+  }
+  let html=marked.parse(raw,{mangle:false,headerIds:false});
+  html=sanitizeHtml(html);
+  html=processLinks(html);
+  if(opts.stripEmoji){
+    html=stripEmojis(html);
+  }
+  previewInner.innerHTML=html;
+  applyPreviewStyles(opts);
+  let pure=buildHtml(html,false,opts);
+  let styled=buildHtml(html,true,opts);
+  if(opts.stripWhitespace){
+    pure=minifyHtml(pure);
+    styled=minifyHtml(styled);
+  }
+  $("pure").value=pure;
+  $("styled").value=styled;
+  downloadHtmlBtn.disabled=downloadStyledBtn.disabled=false;
+};
+const inputs=["title","desc","widthCustom","lineHeight","leftOffset","lang"];
+inputs.forEach(id=>{$(id)&&$(id).addEventListener("input",render);});
+$("source").addEventListener("input",()=>{updateConvertState();render();});
+const updateLeftOffsetState=()=>{
+  const left=$("align").value==="left";
+  leftOffsetInput.disabled=!left;
+  if(leftOffsetWrap){
+    leftOffsetWrap.classList.toggle("disabled",!left);
+  }
+};
+$("align").addEventListener("change",()=>{updateLeftOffsetState();render();});
+updateLeftOffsetState();
+$("tableGrid").addEventListener("change",render);
+$("boxCode").addEventListener("change",render);
+$("font").addEventListener("change",render);
+$("external").addEventListener("change",render);
+$("bg").addEventListener("change",()=>{if($("theme").value==="custom")render();});
+$("fg").addEventListener("change",()=>{if($("theme").value==="custom")render();});
+$("file").addEventListener("change",e=>{
+  const f=e.target.files[0];
+  if(!f){
+    updateConvertState();
+    render();
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    $("source").value=ev.target.result;
+    updateConvertState();
+    render();
+  };
+  reader.readAsText(f);
+});
+$("disableViewport").addEventListener("change",render);
+$("lang").addEventListener("change",render);
+$("stripEmoji").addEventListener("change",render);
+$("stripWhitespace").addEventListener("change",render);
+const autoSize=el=>{
+  el.style.height="auto";
+  el.style.height=`${el.scrollHeight}px`;
+};
+const desc=$("desc");
+desc.addEventListener("input",()=>autoSize(desc));
+autoSize(desc);
+render();
+const download=(text,name)=>{
+  const blob=new Blob([text],{type:"text/html"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+$("downloadHtml").addEventListener("click",()=>download($("pure").value||"", "site.html"));
+$("downloadStyled").addEventListener("click",()=>download($("styled").value||"", "site-with-style.html"));
+</script>
