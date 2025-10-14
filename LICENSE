@@ -24,6 +24,6 @@ SOFTWARE.
 
 ---
 
-### Credits
-This project uses [Marked](https://marked.js.org/) — an MIT-licensed Markdown parser by Christopher Jeffrey and contributors.  
-© 2011-2025, released under the [MIT License](https://github.com/markedjs/marked/blob/master/LICENSE.md).
+Credits:
+This project uses Marked (https://marked.js.org/ or https://github.com/markedjs/marked) — an MIT-licensed Markdown parser by Christopher Jeffrey and contributors.  
+© 2011-2025, released under the MIT License (https://github.com/markedjs/marked/blob/master/LICENSE.md).
